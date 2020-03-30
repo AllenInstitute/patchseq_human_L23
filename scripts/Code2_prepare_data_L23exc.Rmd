@@ -1,0 +1,255 @@
+---
+title: "Data prep for comparisons"
+author: "Jeremy Miller"
+date: "March 27, 2020"
+output: html_notebook
+---
+
+This notebook prepares the data for comparing mouse VISp and human MTG using FACs and Patch-seq in superficial cortical layers.  
+  
+Prior to running this script, you will need to do the following:  
+
+1. Run the "Code1_prepareComparisonDataSets.Rmd" script.  
+2. If needed, set the working directory, (e.g., `setwd("C:/Users/jeremym/Desktop/patchseq_human_L23")`).  
+3. Download everything in the from patchseq_human_L23/data GitHub folder to your `data/` directory.  
+4. Make sure all of the relevant libraries below are installed in advance.  
+  
+### Folder and library prep
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+  
+  
+First load the required libraries and options and set directory locations.  Note that this is all the libraries required for all the code documents, not just this one.  
+  
+```{r load_libraries}
+# Detach all packages (if any)
+#nm = names(sessionInfo()$otherPkgs)
+#if(!is.null(nm))
+#  invisible(lapply(paste0('package:', nm), detach, character.only=TRUE, unload=TRUE))
+
+## Load libraries
+suppressPackageStartupMessages({
+  library(feather)
+  library(dplyr)
+  library(gplots)
+  library(Seurat)
+  library(ggplot2)
+  library(cowplot)
+  library(scrattch.hicat)
+  library(future)
+  library(ggbeeswarm)
+  library(mfishtools) # getBetaScore
+  library(pheatmap)
+  library(VENcelltypes) # mito_genes and sex_genes
+  library(WGCNA)
+  library(Matrix)
+})
+options(stringsAsFactors=FALSE)
+
+## Prepare for extra memory usage
+plan("multiprocess", workers = 4)
+options(future.globals.maxSize = 1000 * 1024^2)
+
+## Folder locations
+mtgFolder   <- "MTG/"
+vispFolder  <- "VISp/"
+inputFolder <- "data/"
+```
+  
+  
+### Read in and subset FACs and Patch-seq
+  
+First, read in the human MTG FACs data.  (The human data will be subsetted to only include superficial Glutamatergic neurons below.)
+  
+```{r load FACS}
+annoMTG   <- read_feather(paste(mtgFolder,"anno.feather",sep="")) 
+Expr.dat  <- feather(paste(mtgFolder,"data.feather",sep=""))   # FPKM
+annoMTG   <- annoMTG[match(Expr.dat$sample_id,annoMTG$sample_id),] 
+datMTG    <- as.matrix(Expr.dat[,names(Expr.dat)!="sample_id"])
+rownames(datMTG) <- annoMTG$sample_id
+datMTG    <- t(datMTG)
+datMTG    <- log2(datMTG+1)  
+
+datMTG_all  <- datMTG
+annoMTG_all <- annoMTG
+gc()
+```
+  
+  
+Second, read in the data from mouse VISp and subset to only include L2/3 excitatory neurons.  
+  
+```{r read in VISp data}
+## Read in the data
+vispFolder<- "VISp/"  
+annoVISp  <- read_feather(paste(vispFolder,"anno.feather",sep="")) 
+exprVISp  <- feather(paste(vispFolder,"data.feather",sep=""))
+annoVISp  <- annoVISp[match(exprVISp$sample_id,annoVISp$sample_id),] 
+datVISp   <- as.matrix(exprVISp[,names(exprVISp)!="sample_id"])
+rownames(datVISp) <- annoVISp$sample_id
+datVISp   <- t(datVISp)
+datVISp   <- log2(datVISp+1)  
+
+datVISp_all  <- datVISp
+annoVISp_all <- annoVISp
+
+## Select cells from the VISp-specific excitatory L2/3 IT subclass 
+kpVISp    <- (annoVISp$subclass_label=="L2/3 IT")&grepl("IT",annoVISp$cluster_label)&
+             (!grepl("ALM",annoVISp$cluster_label)) # Remove any cells from ALM-predominant clusters
+annoVISp  <- annoVISp[kpVISp,]
+datVISp   <- datVISp[,kpVISp]
+```
+  
+  
+We now want to read in the mouse to human orthology table and convert the mouse names to human names for common genes.  This will be useful later.  
+  
+```{r convert mouse to human genes}
+## Convert the mouse to human genes using a recent ortholog table
+orth       <- read.csv(paste0(inputFolder,"ortholog_table_20191122.csv"))
+orthMouse  <- orth$human_symbol[match(rownames(datVISp),orth$mouse_symbol)]
+genesMouse <- rownames(datVISp)
+genesMouse[!is.na(orthMouse)] <- orthMouse[!is.na(orthMouse)]
+rownames(datVISp) <- genesMouse
+
+## Select the genes of common mouse/human genes that are not sex or mitochondrial genes for later
+data(mito_genes)  
+data(sex_genes)  
+excludeGenes <- sort(unique(c(sex_genes,mito_genes)))  
+kpGenes <- intersect(genesMouse,rownames(datMTG))
+kpGenes <- sort(setdiff(kpGenes,excludeGenes))
+```
+  
+  
+Next we read in all the Patch-seq data and meta-data for human and mouse.  These files have been pre-curated and are saved in `input_patchseq_data_sets.RData` in the data folder.  
+  
+Load the HUMAN Patch-seq data and subset to only include the cells to be used in this paper (e.g., cells expected to map to one of the 5 L2/3 human IT types).  
+  
+```{r load all patchseq data}
+load(paste0(inputFolder,"input_patchseq_data_sets.RData"))
+```
+  
+  
+Determine the depth distribution of cells in the Patch-seq data set, so we can subset the dissociated cells/nuclei accordingly.  This step is intended to keep the alignment done between FACS and patch-seq as unbiased as possible.  
+  
+```{r determine how to subset FACs data}
+scaled_depth <- annoPatch$scaled_depth
+# Assume L2/L3 border is around 0.25 depth
+# table(annoMTG$layer_label[annoMTG$cluster_label=="Exc L2 LAMP5 LTK"])  # 25% cells in layer 1 vs. L2, suggesting ~25% dissection error.
+# 0.0-0.2 = 75% L2, 25% L1
+# 0.1-0.2 = 80% L2, 10% L1, 10% L3
+# 0.2-0.3 = 50% L2, 50% L3
+# 0.3-0.4 = 75% L3, 25% L2
+# 0.4-0.8 = L3
+# 0.8-1.0 = 75% L3, 25% L4
+# 1.0+    = 25% L3, 75% L4
+integer_depth <- pmin(floor(10*scaled_depth[!is.na(scaled_depth)]),9)+1
+layer_scale   <- (sum(integer_depth==1)*c(25,75,0,0)+
+                    sum(integer_depth==2)*c(10,80,10,0)+
+                    sum(integer_depth==3)*c(0,50,50,0)+
+                    sum(integer_depth==4)*c(0,25,75,0)+
+                    sum(is.element(integer_depth,5:8))*c(0,0,100,0)+
+                    sum(integer_depth==9)*c(0,0,75,25)+
+                    sum(integer_depth==10)*c(0,0,25,75))/(100*length(integer_depth))
+names(layer_scale) <- paste0("L",1:4)
+round(1000*layer_scale)/1000
+```
+  
+We will assume this disribution of FACS sampling from each of the relevant cell types.  Now let's actually subset the FACs data.  To do this, will use three filters:  
+
+1. In one of the five primary excitatory L2/3 types defined in Hodge et al 2018: "Exc L2 LAMP5 LTK", "Exc L2-3 LINC00507 FREM3", "Exc L2-4 LINC00507 GLP2R", "Exc L3-4 RORB CARM1P1", or "Exc L3-5 RORB COL22A1".  
+2. Subsample the FACs data to roughly match the expected proportions of cells based on laminar sampling from patch-seq as calculated above.  
+3. Keep as many L2/3 excitatory cells as possible.  
+  
+```{r subset FACs data}
+kpClust <- c("Exc L2 LAMP5 LTK", "Exc L2-3 LINC00507 FREM3", "Exc L2-4 LINC00507 GLP2R", "Exc L3-4 RORB CARM1P1", "Exc L3-5 RORB COL22A1")
+kpLayer <- paste0("L",1:4)
+annoMTG_all$layer_label <- annoMTG_all$brain_subregion_label
+kpSamp1 <- is.element(annoMTG_all$layer_label,kpLayer)&is.element(annoMTG_all$cluster_label,kpClust)
+layer_facs <- table(annoMTG_all$layer_label[kpSamp1])/sum(kpSamp1)
+round(100*layer_facs)/100
+
+subsample_scale = layer_scale/layer_facs/max(layer_scale/layer_facs)
+
+layer = annoMTG_all$layer_label[kpSamp1]
+index = (1:length(kpSamp1))[kpSamp1]
+useIndex <- NULL
+for (lay in kpLayer){
+  subs     <- round(length(index[layer==lay])*subsample_scale[lay])
+  set.seed(1) # For reproducibility
+  useIndex <- c(useIndex,sample(index[layer==lay],subs))
+}
+
+kpSamp <- is.element(1:length(kpSamp1),useIndex)
+layer_facs <- table(annoMTG_all$layer_label[kpSamp])/sum(kpSamp)
+round(100*layer_facs)/100
+table(kpSamp)
+table(annoMTG_all$cluster_label[kpSamp])
+
+datMTG  <- datMTG_all[,kpSamp]
+annoMTG <- annoMTG_all[kpSamp,]
+
+## Add a "depth" column for FACS data: L1 = 0, L2 = 0.15, L3=0.6, L4 = 1
+annoMTG$scaled_depth <- setNames(c(0,0.15,0.6,1),kpLayer)[annoMTG$layer_label]
+```
+  
+Next, annotate the FREM3 cluster by layer, as well as by the subtypes calculated in Hodge et al 2019 supplemental materials (included with this analysis as a separate file).  
+  
+```{r split FREM3 again}
+load("data/subtype_mtg_clusters.rda")
+clNew  <- cl.final[annoMTG_all$seq_name_label]
+isFREM <- table(clNew,grepl("FREM",annoMTG_all$cluster_label))
+isFREM <- (((isFREM[,2]/rowSums(isFREM))>=0.5))&(rowSums(isFREM)>=50)
+kpFREM <- as.numeric(names(isFREM)[isFREM])
+kpF <- is.element(clNew,kpFREM)
+clNew[kpF] <- paste0("f",clNew[kpF])
+clNew[!kpF] <- "other"
+names(clNew) <- colnames(datMTG_all)
+annoMTG$frem_subtype <- clNew[colnames(datMTG)]
+
+## Split FREM3 by layer
+cluster_frem        <- as.character(annoMTG$cluster_label)
+kp                  <- cluster_frem=="Exc L2-3 LINC00507 FREM3"
+cluster_frem[kp]    <- paste(cluster_frem[kp],annoMTG$brain_subregion_label[kp],sep="__")
+annoMTG$frem_layer  <- cluster_frem
+```
+  
+Note that we have already subsetted the relevant mouse VISp cells from "L2/3 IT VISp Adamts2", "L2/3 IT VISp Agmat", and "L2/3 IT VISp Rrad" clusters above.  We are not going to attempt to subsample these cell types further in mouse.  
+  
+  
+### Subset and update relevant meta-data
+  
+First, update the human FACs annotations.  
+  
+```{r human FACs annotations}
+kpColumns   <- c("sample_id","age_days_label","brain_hemisphere_label","cluster_label","cluster_color",
+                 "donor_label","frem_layer","frem_subtype","layer_label","scaled_depth","sex_label")
+newColors   <- setNames(c("#cfe818","#3263b0","#3db516","#6f2af7","#f057f0"),kpClust)
+annoMTG     <- annoMTG[,intersect(colnames(annoMTG),kpColumns)]
+annoMTG_all <- annoMTG_all[,intersect(colnames(annoMTG_all),kpColumns)]
+annoMTG$cluster_color <- as.character(newColors[annoMTG$cluster_label])
+```
+  
+  
+Next, update the mouse FACs annotations.  
+  
+```{r mouse FACs annotations}
+kpColumnsM  <- c("sample_id","age_days_label","brain_hemisphere_label","cluster_label","cluster_color",
+                 "donor_label","genotype_label","sex_label")
+newColorsM  <- setNames(c("#ffc800","#d10034","#f67415"),c("L2/3 IT VISp Adamts2","L2/3 IT VISp Agmat","L2/3 IT VISp Rrad"))
+annoVISp    <- annoVISp[,intersect(colnames(annoVISp),kpColumnsM)]
+annoVISp_all<- annoVISp_all[,intersect(colnames(annoVISp_all),kpColumnsM)]
+annoVISp$cluster_color <- as.character(newColorsM[annoVISp$cluster_label])
+```
+  
+The data sets are now ready to compare!  We will now save these relevant files as an R object that will be the starting point for all further transcriptomic analysis in the paper.  
+  
+  
+### Save the results
+  
+```{r save data }
+save(datMTG_all, annoMTG_all, datVISp_all, annoVISp_all, file="complete_facs_data_sets.RData")
+save(datMTG, annoMTG, datVISp, annoVISp, datPatch, annoPatch, datPatchM, annoPatchM, file="input_data_sets.RData")
+```
+  
+  
