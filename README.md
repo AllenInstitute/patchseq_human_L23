@@ -3,7 +3,7 @@ Code for reproducing the analyses presented in "Human cortical expansion involve
 
 ## Data
 
-Most of the data for this manuscript are located in the "data" folder above.  In addition you will need to download some larger data files from here:  <b>LOCATION TBD - EDIT DETAILS OF FILES</b>
+Most of the data for this manuscript are located in the "data" folder above.  In addition you will need to download some larger data files from the [Allen Brain Map](https://portal.brain-map.org/atlases-and-data/rnaseq), as described in the relevant scripts.
 
 ## Scripts
 
