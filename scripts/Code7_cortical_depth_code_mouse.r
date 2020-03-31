@@ -1,6 +1,6 @@
 #############################################################################
 ## Setup and library loading
-setwd("mouse_cell_sizes")
+setwd("Z:\\hct\\HCT_RNAseq\\Jeremy\\patchseq_analysis\\human_IVSCC_paper_Jan2020\\mouse_cell_sizes\\")
 library(RImageJROI)
 library(msir)
 library(ggplot2)
@@ -304,3 +304,52 @@ print(l2)
 print(l2H)
 #[1] -0.1789919 -0.1994788 -0.1639307 -0.1988349 -0.1895495
  
+
+## Plot a histogram of human and mouse cell areas.  
+
+pdf("cell_area_histograms.pdf",height=10,width=5)
+par(mfrow=c(8,1))
+par(mar=c(2,3,0,0))
+for (i in 1:3){
+  hist(roiInfo[[i]][,"area"],breaks=(0:50)*20,xlab="",main="",ylab="Frequency",col="red")
+  abline(v=mean(roiInfo[[i]][,"area"])) 
+}
+for (i in 1:5){
+  hist(roiInfoH[[i]][,"area"],breaks=(0:50)*20,xlab="",main="",ylab="Frequency",col="green")
+  abline(v=mean(roiInfoH[[i]][,"area"])) 
+  print(quantile(roiInfoH[[i]][,"area"]))  
+}
+dev.off()
+
+p=c(0,0.05,0.25,0.5,0.75,0.9,0.99,1)
+a<-NULL
+for (i in 1:3)  a <- c(a,roiInfo[[i]][,"area"])
+print(quantile(a,p))
+#        0%         5%        25%        50%        75%        90%        99%       100% 
+#  4.499541  18.999082  44.719927  66.115702  96.464646 130.394858 178.681359 244.628099
+head(-sort(-a))
+#[1] 244.6281 216.7126 214.1414 210.4683 195.4086 194.3067
+
+pdf("cell_diameter_histograms.pdf",height=10,width=5)
+par(mfrow=c(8,1))
+par(mar=c(2,3,0,0))
+for (i in 1:3){
+  d = 2*sqrt(roiInfo[[i]][,"area"]/pi)
+  hist(d,breaks=0:40,xlab="",main="",ylab="Frequency",col="red")
+  abline(v=mean(d)) 
+}
+for (i in 1:5){
+  d = 2*sqrt(roiInfoH[[i]][,"area"]/pi)
+  hist(d,breaks=0:40,xlab="",main="",ylab="Frequency",col="green")
+  abline(v=mean(d)) 
+}
+dev.off()
+
+a<-NULL
+for (i in 1:5)  a <- c(a,roiInfoH[[i]][,"area"])
+print(quantile(a,p))
+#       0%        5%       25%       50%       75%       90%       99%      100% 
+# 13.29640  62.04986 107.47922 168.42105 252.63158 343.49030 542.30471 886.42659
+head(-sort(-a))
+#[1] 886.4266 885.3186 824.3767 787.8116 745.7064 722.4377
+

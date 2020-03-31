@@ -1,6 +1,6 @@
 #############################################################################
 ## Setup and library loading
-setwd("human_cell_sizes")
+setwd("Z:\\hct\\HCT_RNAseq\\Jeremy\\patchseq_analysis\\human_IVSCC_paper_Jan2020\\human_cell_sizes\\")
 library(RImageJROI)
 library(msir)
 library(ggplot2)
@@ -181,4 +181,5 @@ dens$species <- "human"
 ## SAVE THE HUMAN DATA FOR COMPARISON WITH MOUSE
 densH <- dens
 l2H   <- l2
-save(densH, l2H, cellsPerMMh, breaks, file="../mouse_cell_sizes/human_cell_data.RData")
+roiInfoH <- roiInfo
+save(densH, l2H, cellsPerMMh, breaks, roiInfoH, file="../mouse_cell_sizes/human_cell_data.RData")
