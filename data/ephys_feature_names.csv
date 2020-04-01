@@ -1,0 +1,19 @@
+raw_name,short_name,full_name,units_name
+adapt_mean,adaptation,adaptation,adaptation
+avg_rate_hero,mean rate,mean firing rate,mean firing rate (Hz)
+downstroke_long_square,AP down,AP downstroke rate,AP downstroke rate (mV/ms)
+fast_trough_v_long_square_rel,AHP,AP fast AHP,AP fast AHP (mV)
+fi_fit_slope,f-I slope,f-I slope,f-I slope (Hz/pA)
+first_isi_hero_inv,init rate,initial firing rate,initial firing rate (Hz)
+input_resistance,Ri,input resistance,input resistance (MΩ)
+latency_rheo,latency,latency,latency (sec)
+peak_v_long_square_rel,AP height,AP height,AP height (mV)
+rheobase_i,rheobase,rheobase,rheobase (pA)
+sag,sag,sag,sag ratio
+tau,tau,time constant τ,time constant τ (sec)
+threshold_v_long_square,AP thresh,AP threshold,AP threshold (mV)
+trough_v_long_square_rel,AP trough,AP trough,AP trough (mV)
+upstroke_downstroke_ratio_long_square,AP up/down,AP upstroke/downstroke ratio,AP upstroke/downstroke ratio
+upstroke_long_square,AP up,AP upstroke rate,AP upstroke rate (mV/ms)
+v_baseline,RMP,resting membrane potential,resting membrane potential (mV)
+width_long_square,AP width,AP width,AP width (ms)
