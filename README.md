@@ -15,7 +15,7 @@ The license for this package is available on Github at: https://github.com/Allen
 
 ## Level of Support
 
-This code will be updated only if figures change during review.
+This code will be updated only if figures change during review or if corrections need to be made.  
 
 ## Contribution Agreement
 
