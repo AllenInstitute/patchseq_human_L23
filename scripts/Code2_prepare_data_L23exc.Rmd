@@ -247,9 +247,25 @@ The data sets are now ready to compare!  We will now save these relevant files a
   
 ### Save the results
   
-```{r save data }
+First save the results in RData format for the R scripts.  
+  
+```{r save data for R}
 save(datMTG_all, annoMTG_all, datVISp_all, annoVISp_all, file="complete_facs_data_sets.RData")
 save(datMTG, annoMTG, datVISp, annoVISp, datPatch, annoPatch, datPatchM, annoPatchM, file="input_data_sets.RData")
 ```
   
+Second, save the results in feather format for the python scripts.  
+  
+```{r save data for python}
+dat <- data.frame(sample_id=colnames(datPatch),t(datPatch))
+colnames(dat) <- c("sample_id",rownames(datPatch))
+write_feather(dat,"dataH.feather")
+write_feather(annoPatch,"annoH.feather")
+dat <- data.frame(sample_id=colnames(datPatchM),t(datPatchM))
+colnames(dat) <- c("sample_id",rownames(datPatchM))
+write_feather(dat,"dataM.feather")
+write_feather(annoPatchM,"annoM.feather")
+```
+  
+Note that these output files do not include human cluster calls for Patch-seq cells, which will be calculated in a later R script.  
   
