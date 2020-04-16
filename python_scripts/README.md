@@ -13,6 +13,8 @@ All high-level analysis and figure code is presented in jupyter notebooks as fol
 
 `morpho_electro_feature_analysis.ipynb`: All remaining depth, electrophysiology, and morphology analysis from main paper, Figures 4-6.
 
+`morpho_electro_feature_projections.ipynb`: Electrophysiology and morphology feature visualization by SPCA and UMAP projections, Figure 4.
+
 `classifier_and_species_analysis.ipynb`: Additional Extended Data results including random forest classifier for t-types and cross-species comparison of electrophysiology.
 
 Additionally, code to calculate gene-depth correlations (very compute-intensive) is in `gene_depth_corr_calculation.py`. For convenience, results are included in data so there is no need to re-run this analysis.
