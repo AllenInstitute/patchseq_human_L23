@@ -3,7 +3,7 @@ Code for reproducing the analyses presented in "Human cortical expansion involve
 
 ## Data
 
-Most of the data for this manuscript are located in the "data" folder above.  In addition you will need to download some larger data files from the [Allen Brain Map](https://portal.brain-map.org/atlases-and-data/rnaseq), as described in the relevant scripts.
+Most of the data for this manuscript are located in the "data" folder above.  In addition you will need to download some larger data files from the [Allen Brain Map](https://portal.brain-map.org/atlases-and-data/rnaseq), as described in the relevant scripts.  Additional project information and links to raw data is available from the [Human PatchSeq L2/3 project](https://knowledge.brain-map.org/data/0R94W5U07IHCMVJ4TVK/summary) at the Allen Brain Map.
 
 ## Scripts
 
