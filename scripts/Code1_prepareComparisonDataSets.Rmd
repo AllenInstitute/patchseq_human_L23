@@ -1,26 +1,29 @@
 ---
 title: "Data input from website"
 author: "Jeremy Miller"
-date: "March 27, 2020"
+date: "September 15, 2021"
 output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+  
+  
 # Overview
 
 This script reads converts the dissociated cell data downloaded from the Allen Institute Cell Types Database (http://celltypes.brain-map.org/rnaseq) into a format compatible for use as comparison data to Patch-seq.
-
+  
+  
 ### Prior to running any code, download the data:
   
-1. If needed, set the working directory first: e.g., `setwd("C:/Users/jeremym/Desktop/patchseq_human_L23")`  
+1. If needed, set the working directory first: e.g., `setwd("PATH_TO_DIRECTORY/patchseq_human_L23")`  
 2. Create a subfolder in your current working directory called `data`.  *This is the same folder where files downloaded from patchseq_human_L23/data should also be placed.*  
-3. Download and unzip the following files in `data`.  
+3. Download and unzip (if needed) the following files in `data`.  
     a. Human MTG:  http://celltypes.brain-map.org/api/v2/well_known_file_download/694416044  
-    b. Mouse VISp: http://celltypes.brain-map.org/api/v2/well_known_file_download/694413985  
-_NOTE: These links are accurate as of April 2019.  If these data are moved in later releases, this code document will be updated accordingly - please post an Issue if needed.  Similarly, note that the dates below may need to be updated._  
+    b. Mouse VISp: http://celltypes.brain-map.org/api/v2/well_known_file_download/694413985
+    c. Mouse ALM:  http://celltypes.brain-map.org/api/v2/well_known_file_download/694413179 
+_NOTE: Links are accurate as of September 2021.  If these data are moved in later releases, this code document will be updated accordingly - please post an Issue if needed.  Similarly, note that the dates below may need to be updated._  
 4. Make sure all of the relevant libraries below are installed in advance.  
 
 ### Load the relevant libraries
@@ -60,6 +63,7 @@ geneInfo <- read.csv("data/human_MTG_2018-06-14_genes-rows.csv",row.names=1)
 sampInfo <- read.csv("data/human_MTG_2018-06-14_samples-columns.csv",row.names=1)
 ```
   
+  
 Second, convert the meta-data files into formats consistent with the rest of the analysis.  Note that the MTG cluster colors (and other info) which is stored as a data file in `VENcelltypes`.  
   
 ```{r format MTG metadata}
@@ -75,6 +79,7 @@ data(clusterInfoMTG)
 anno$cluster_color <- clusterInfoMTG$cluster_color[match(anno$cluster_label,clusterInfoMTG$cluster_label)]
 anno$cluster_id    <- clusterInfoMTG$cluster_id[match(anno$cluster_label,clusterInfoMTG$cluster_label)]
 ```
+  
   
 Next, convert the data into CPM(exons+introns) and format appropriately.  *For this data set we also precalculate the medians for convenience.*  
   
@@ -97,20 +102,21 @@ medianExpr <- as.data.frame(medianExpr)
 medianExpr$gene <- rownames(geneInfo) 
 ```
   
+  
 Finally, output the results to feather files in the `MTG` directory.  
   
 ```{r output MTG data}
 # Create MTG directory
-dir.create("MTG")
+#dir.create("MTG")
 
 # Write annotation file
-write_feather(anno,"MTG/anno.feather")
+#write_feather(anno,"MTG/anno.feather")
 
 # Write medians file
-write_feather(medianExpr,"MTG/medians.feather")
+#write_feather(medianExpr,"MTG/medians.feather")
 
 # Write data file
-write_feather(data,"MTG/data.feather")
+#write_feather(data,"MTG/data.feather")
 ```
   
   
@@ -131,9 +137,11 @@ rm(exonsI,intronsI)
 # If fread doesn't work, read.csv can also be used, but it is ~100x slower
 #exons    <- read.csv("data/mouse_VISp_2018-06-14_exon-matrix.csv",row.names=1)
 #introns  <- read.csv("data/mouse_VISp_2018-06-14_intron-matrix.csv",row.names=1)
+
 geneInfo <- read.csv("data/mouse_VISp_2018-06-14_genes-rows.csv",row.names=1)
 sampInfo <- read.csv("data/mouse_VISp_2018-06-14_samples-columns.csv",row.names=1)
 ```
+  
   
 Second, convert the meta-data files into formats consistent with the rest of the analysis.  
   
@@ -142,6 +150,7 @@ sampInfo[is.na(sampInfo)]=0
 anno <- auto_annotate(sampInfo)
 anno$sample_id <- anno$sample_name
 ```
+  
   
 Next, convert the data into CPM(exons+introns) and format appropriately.  
   
@@ -156,17 +165,78 @@ data <- as.data.frame(t(CPM))
 data$sample_id <- anno$sample_id
 ```
   
+  
 Finally, output the results to feather files in the `VISp` directory.  
   
 ```{r output VISp data}
 # Create MTG directory
-dir.create("VISp")
+#dir.create("VISp")
 
 # Write annotation file
-write_feather(anno,"VISp/anno.feather")
+#write_feather(anno,"VISp/anno.feather")
 
 # Write data file
-write_feather(data,"VISp/data.feather")
+#write_feather(data,"VISp/data.feather")
+```
+  
+  
+### Process the mouse ALM data  
+  
+First we need to read the data into R. *This step is slow.*  
+  
+```{r read in ALM data}
+exonsI     <- fread('data/mouse_ALM_2018-06-14_exon-matrix.csv', header = T, sep = ',',verbose=FALSE)
+exons      <- as.matrix(exonsI[,2:dim(exonsI)[2]])
+rownames(exons) <- as.character(as.matrix(exonsI[,1]))
+
+intronsI   <- fread('data/mouse_ALM_2018-06-14_intron-matrix.csv', header = T, sep = ',',verbose=FALSE)
+introns    <- as.matrix(intronsI[,2:dim(intronsI)[2]])
+rownames(introns) <- as.character(as.matrix(intronsI[,1]))
+rm(exonsI,intronsI)
+
+# If fread doesn't work, read.csv can also be used, but it is ~100x slower
+#exons    <- read.csv("data/mouse_ALM_2018-06-14_exon-matrix.csv",row.names=1)
+#introns  <- read.csv("data/mouse_ALM_2018-06-14_intron-matrix.csv",row.names=1)
+
+geneInfo <- read.csv("data/mouse_ALM_2018-06-14_genes-rows.csv",row.names=1)
+sampInfo <- read.csv("data/mouse_ALM_2018-06-14_samples-columns.csv",row.names=1)
+```
+  
+  
+Second, convert the meta-data files into formats consistent with the rest of the analysis.  
+  
+```{r format ALM metadata}
+sampInfo[is.na(sampInfo)]=0
+anno <- auto_annotate(sampInfo)
+anno$sample_id <- anno$sample_name
+```
+  
+  
+Next, convert the data into CPM(exons+introns) and format appropriately.  
+  
+```{r format ALM data}
+## Calculate CPM
+CPM <- cpm(introns+exons)
+rownames(CPM) <- rownames(geneInfo)
+colnames(CPM) <- anno$sample_id
+
+## Format appropriate
+data <- as.data.frame(t(CPM))
+data$sample_id <- anno$sample_id
+```
+  
+  
+Finally, output the results to feather files in the `ALM` directory.  
+  
+```{r output ALM data}
+# Create MTG directory
+#dir.create("ALM")
+
+# Write annotation file
+#write_feather(anno,"ALM/anno.feather")
+
+# Write data file
+#write_feather(data,"ALM/data.feather")
 ```
   
   

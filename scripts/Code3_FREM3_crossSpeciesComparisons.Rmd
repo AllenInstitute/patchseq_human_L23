@@ -1,7 +1,7 @@
 ---
 title: "Cross-species analysis"
 author: "Jeremy Miller"
-date: "March 27, 2020"
+date: "September 15, 2021"
 output: html_notebook
 ---
 
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Overview
 
 This script performs some statistical analyses and makes some UMAP plots showing glutamatergic neurons in supragranular layers of human MTG and mouse VISp.  One purpose is to quantify to what extent the cell type diversity, variation, and specialization of human types extends beyond that of mouse.  Note that this script is only considering dissociated cells/nuclei (called "FACS" here) and includes code for generating panels of Figure 1.   
-If needed set the working directory:  (e.g., `setwd("C:/Users/jeremym/Desktop/patchseq_human_L23")`). 
+If needed set the working directory:  (e.g., `setwd("PATH_TO_DIRECTORY/patchseq_human_L23")`). 
   
 ### Work space preparation
   
@@ -29,6 +29,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(cowplot)
   library(scrattch.hicat)
+  library(scrattch.vis)
   library(future)
   library(ggbeeswarm)
   library(mfishtools) # getBetaScore
@@ -43,7 +44,7 @@ options(future.globals.maxSize = 4000 * 1024^2)
 ```
   
   
-Next, load the all the relevant data, which were calculated in a previous script.  
+Next, load the all the relevant data, which were calculated in previous scripts.  
   
 ```{r load data}
 load("input_data_sets.RData")
@@ -81,40 +82,55 @@ human <- NormalizeData(human, verbose = FALSE)
 VariableFeatures(human) <- varFeatures
 human <- ScaleData(object = human, verbose = FALSE)
 human <- RunPCA(object = human, npcs = 30, verbose = FALSE)
-human <- RunUMAP(object = human, reduction = "pca", dims = 1:30, verbose = FALSE)
+human <- RunUMAP(object = human, reduction = "pca", dims = 1:30, verbose = FALSE)#, umap.method = 'umap-learn')#, metric = 'correlation')
 ``` 
   
   
-Third, plot the human umap.  
+Third, plot the human umap.  **Important note: UMAPs may look slightly different with different R configurations due to how the umap functionality is implemented in Seurat.  These minor umap differences do not impact manuscript conclusions.**  
   
 ```{r plot human seurat, fig.height=5,fig.width=15}
 xl <- range(FetchData(human,"UMAP_1"))
 yl <- range(FetchData(human,"UMAP_2"))
 cols <- unique(annoMTG$cluster_color)[match(sort(unique(human_metadata$celltype)),unique(human_metadata$celltype))]
 f1 <- colnames(human)[annoMTG$frem_subtype!="other"]
-p1 <- DimPlot(object = human, group.by = "subclusterFrem", reduction = "umap", do.return = TRUE, pt.size = 1, 
+pa1 <- DimPlot(object = human, group.by = "subclusterFrem", reduction = "umap", pt.size = 1, 
               label=TRUE, label.size = 8, cells=f1) + NoLegend() + xlim(xl) + ylim(yl)
-p2 <- DimPlot(object = human, group.by = "celltype", reduction = "umap", do.return = TRUE, pt.size = 1, 
+pa2 <- DimPlot(object = human, group.by = "celltype", reduction = "umap", pt.size = 1, 
               label=TRUE, cols=cols) + NoLegend() + xlim(xl) + ylim(yl)
 f3 <- colnames(human)[annoMTG$cluster_label=="Exc L2-3 LINC00507 FREM3"]
-p3 <- DimPlot(object = human, group.by = "layer",  reduction = "umap", do.return = TRUE, pt.size = 1, 
+pa3 <- DimPlot(object = human, group.by = "layer",  reduction = "umap", pt.size = 1, 
               label=TRUE, label.size = 8, cells=f3) + NoLegend() + xlim(xl) + ylim(yl)
-plot_grid(p1, p2, p3, ncol = 3)
+plot_grid(pa1, pa2, pa3, ncol = 3)
+p_human <- pa2 # For saving coordinates later
 
 ## Repeat with labels set to FALSE
 xl <- range(FetchData(human,"UMAP_1"))
 yl <- range(FetchData(human,"UMAP_2"))
 cols <- unique(annoMTG$cluster_color)[match(sort(unique(human_metadata$celltype)),unique(human_metadata$celltype))]
 f1 <- colnames(human)[annoMTG$frem_subtype!="other"]
-p1 <- DimPlot(object = human, group.by = "subclusterFrem", reduction = "umap", do.return = TRUE, pt.size = 1, 
+p1 <- DimPlot(object = human, group.by = "subclusterFrem", reduction = "umap", pt.size = 1, 
               label=FALSE, label.size = 8, cells=f1) + NoLegend() + xlim(xl) + ylim(yl)
-p2 <- DimPlot(object = human, group.by = "celltype", reduction = "umap", do.return = TRUE, pt.size = 1, 
+p2 <- DimPlot(object = human, group.by = "celltype", reduction = "umap", pt.size = 1, 
               label=FALSE, cols=cols) + NoLegend() + xlim(xl) + ylim(yl)
 f3 <- colnames(human)[annoMTG$cluster_label=="Exc L2-3 LINC00507 FREM3"]
-p3 <- DimPlot(object = human, group.by = "layer",  reduction = "umap", do.return = TRUE, pt.size = 1, 
+p3 <- DimPlot(object = human, group.by = "layer",  reduction = "umap", pt.size = 1, 
               label=FALSE, label.size = 8, cells=f3) + NoLegend() + xlim(xl) + ylim(yl)
 plot_grid(p1, p2, p3, ncol = 3)
 ggsave("UMAP_human.pdf",height=6,width=15)
+
+## Output in a different format
+p <- list()
+p[[1]] <- list(); p[[1]][[1]] <- pa1
+p[[2]] <- list(); p[[2]][[1]] <- pa2
+p[[3]] <- list(); p[[3]][[1]] <- pa3
+p[[4]] <- list(); p[[4]][[1]] <- p1
+p[[5]] <- list(); p[[5]][[1]] <- p2
+p[[6]] <- list(); p[[6]][[1]] <- p3
+pdf("umap_human_one_per_page.pdf", onefile = TRUE, height=4.5, width=5)
+for (i in seq(length(p))) {
+  do.call("grid.arrange", p[[i]])  
+}
+dev.off()
 ```  
   
 Use genesorteR to identify genes differentially expressed between FREM3, COL22A1, and CARM1P1 for DEX analysis.  
@@ -129,7 +145,7 @@ propExpr3 <- get_cl_prop(datMTG[,kp3],cl[kp3])
 
 
 #very roughly filter genes
-betaScore3 <- getBetaScore(propExpr[rowSums(propExpr[,cl3])>0.3,cl3])
+betaScore3 <- getBetaScore(propExpr3[rowSums(propExpr3[,cl3])>0.3,cl3])
 kpGenes3   <- names(sort(-betaScore3))[1:10000]
 write(sort(kpGenes3[1:300]),"human_markers_beta300.txt")
 
@@ -137,10 +153,10 @@ write(sort(kpGenes3[1:300]),"human_markers_beta300.txt")
 sg = sortGenes(datMTG[kpGenes3,kp3], annoMTG$cluster_label[kp3])
 
 #define a small set of markers
-mm = getMarkers(sg, quant = 0.7)
+mm3 = getMarkers(sg, quant = 0.7)
 
 #cluster genes and make a heatmap
-pp = plotMarkerHeat(sg$inputMat, sg$inputClass, mm$markers, clusterGenes=TRUE, outs = TRUE)
+pp = plotMarkerHeat(sg$inputMat, sg$inputClass, mm3$markers, clusterGenes=TRUE, outs = TRUE)
 pdf("dex_heatmap_genesorteR.pdf",height = 15,width=8)
 pp$pheat
 dev.off()
@@ -150,11 +166,51 @@ pdf("dex_heatmap_beta300.pdf",height = 19,width=8)
 pp$pheat
 dev.off()
 
-write(sort(mm$markers),"human_markers_genesorteR.txt")
+write(sort(mm3$markers),"human_markers_genesorteR.txt")
 ```
   
   
-Plot some canonical genes in this space for annotation.  In particular, we want to plot all genes that are selectively expressed for various deep layer 3 types.  The file read in below is a superset of the genes plotted in Figure 6f and includes all chosen by genesorteR based on FACS (above) and Patch-seq (in a later script).  
+  
+Now use genesorteR to identify genes differentially expressed between deep and superficial L2/3.  
+  
+```{r}
+#filter cells
+cl2       <- c("Exc L2-3 LINC00507 FREM3", "Exc L2-4 LINC00507 GLP2R", "Exc L2 LAMP5 LTK")
+kp2       <- is.element(annoMTG$cluster_label,cl2)&
+  ((is.element(annoMTG$layer_label,c("L2")))|(annoMTG$cluster_label!="Exc L2-3 LINC00507 FREM3"))
+kp        <- kp2|kp3
+
+depth     <- setNames(c("deep","superficial")[kp2+1],colnames(datMTG))
+propExpr2 <- get_cl_prop(datMTG[,kp],depth[kp])
+
+
+#very roughly filter genes
+betaScore2 <- getBetaScore(propExpr2)
+kpGenes2   <- names(sort(-betaScore2))[1:10000]
+write(sort(kpGenes2[1:300]),"human_markers_L23_beta300.txt")
+
+#get specificity scores for each cell type
+sg = sortGenes(datMTG[kpGenes2,kp], depth[kp])
+
+#define a small set of markers
+mm = getMarkers(sg, quant = 0.7)
+
+#cluster genes and make a heatmap
+pp = plotMarkerHeat(sg$inputMat, sg$inputClass, mm$markers, clusterGenes=TRUE, outs = TRUE)
+pdf("dex_heatmap_L23_genesorteR.pdf",height = 15,width=8)
+pp$pheat
+dev.off()
+
+pp = plotMarkerHeat(sg$inputMat, sg$inputClass, kpGenes3[1:300], clusterGenes=TRUE, outs = TRUE)
+pdf("dex_heatmap_L23_beta300.pdf",height = 19,width=8)
+pp$pheat
+dev.off()
+
+write(sort(mm$markers),"human_markers_L23_genesorteR.txt")
+```
+  
+  
+Plot some canonical genes in this space for annotation.  In particular, we want to plot all genes that are selectively expressed for various deep layer 3 types.  We also plot FOXP2, which is one of the genes distinguising superficual L2/3 from deep L3.  
   
 ```{r genes plot2, fig.height=7,fig.width=14, message=FALSE, warning=FALSE}
 features = c("RORB","LAMP5",'CARM1P1',"COL22A1","FREM3","LTK","GLP2R","CUX2")
@@ -162,7 +218,7 @@ FeaturePlot(object = human, reduction = "umap", pt.size = 0.5,
                         features = features, ncol=4, slot="counts") + 
     ylim(xl) + ylim(yl)
 
-features = scan("data/human_markers_beta300_FACSandPatch.txt",what="character",sep="\n")
+features = c("NEFH",sort(mm3$markers))  # Also including NEFH for inclusion in figure
 
 p<-list()
 for (i in 1:length(features)) {
@@ -172,19 +228,26 @@ for (i in 1:length(features)) {
     ylim(xl) + ylim(yl)
 }
 
-pdf("genePlots_deepTypes_beta300.pdf", onefile = TRUE, height=4.5, width=5)
+pdf("genePlots_deepTypes_L3genes.pdf", onefile = TRUE, height=4.5, width=5)
 for (i in seq(length(p))) {
+  do.call("grid.arrange", p[[i]])  
+}
+dev.off()
+
+pdf("genePlots_deepTypes_L3genes_Fig4.pdf", onefile = TRUE, height=4.5, width=5)
+fig4genes <- which(is.element(features,c("COBLL1","KCNK2","NEFH","NTN4","PHLDB2","QRFPR","SEMA5A","SV2C")))
+for (i in fig4genes) {
   do.call("grid.arrange", p[[i]])  
 }
 dev.off()
 ```
   
   
-#### Mouse
+#### Mouse VISp
   
 First, select variable features based on beta score (this replaces the default Seurat method and is also independent of the Patch-seq cells).  
   
-```{r mouse variable gene selection}
+```{r mouse VISp variable gene selection}
 nGenes     <- 2000
 cl         <- setNames(annoVISp$cluster_label,colnames(datVISp))
 propExpr   <- get_cl_prop(datVISp,cl)
@@ -195,53 +258,90 @@ varFeatures<- betaOutM$Gene[1:nGenes]
 ```
   
   
-Second build the mouse Seurat object and run the preparations.  
+Second build the mouse VISp Seurat object and run the preparations.  
   
-```{r mouse seurat}
+```{r mouse VISp seurat}
 spl2 <- function(a) as.character(lapply(a,function(x) {a=strsplit(x," ")[[1]]; paste(a[c(1,length(a))],collapse = " ")}))
 mouse_metadata <- data.frame(celltype = spl2(annoVISp$cluster_label),
                              clusterFrem = annoVISp$cluster_label)
 rownames(mouse_metadata) <- colnames(datVISp)
-mouse <- CreateSeuratObject(datVISp, meta.data = mouse_metadata)
-mouse <- NormalizeData(mouse, verbose = FALSE)
-#mouse <- FindVariableFeatures(mouse, selection.method = "vst", nfeatures = 2000, verbose = FALSE) # 750
-VariableFeatures(mouse) <- varFeatures
-mouse <- ScaleData(object = mouse, verbose = FALSE)
-mouse <- RunPCA(object = mouse, npcs = 30, verbose = FALSE)
-mouse <- RunUMAP(object = mouse, reduction = "pca", dims = 1:30, verbose = FALSE)
+mouseV <- CreateSeuratObject(datVISp, meta.data = mouse_metadata)
+mouseV <- NormalizeData(mouseV, verbose = FALSE)
+#mouseV <- FindVariableFeatures(mouseV, selection.method = "vst", nfeatures = 2000, verbose = FALSE) # 750
+VariableFeatures(mouseV) <- varFeatures
+mouseV <- ScaleData(object = mouseV, verbose = FALSE)
+mouseV <- RunPCA(object = mouseV, npcs = 30, verbose = FALSE)
+mouseV <- RunUMAP(object = mouseV, reduction = "pca", dims = 1:30, verbose = FALSE)
 ``` 
 
 
-```{r plot mouse seurat, fig.height=5,fig.width=15}
+```{r plot mouse VISp seurat, fig.height=5,fig.width=15}
 colsM <- unique(annoVISp$cluster_color)[match(sort(unique(mouse_metadata$celltype)),unique(mouse_metadata$celltype))]
-p1 <- DimPlot(object = mouse, group.by = "celltype", reduction = "umap", do.return = TRUE, pt.size = 1, 
+p1 <- DimPlot(object = mouseV, group.by = "celltype", reduction = "umap", pt.size = 1, 
               label=TRUE, cols=colsM) + NoLegend() + xlim(xl) + ylim(yl)
-p2 <- DimPlot(object = mouse, group.by = "celltype", reduction = "umap", do.return = TRUE, pt.size = 1, 
+p2 <- DimPlot(object = mouseV, group.by = "celltype", reduction = "umap", pt.size = 1, 
               label=FALSE, cols=colsM) + NoLegend() + xlim(xl) + ylim(yl)
+p_mouseV <- p2 # For saving coordinates later
 plot_grid(p1, p2, ncol = 3)
-ggsave("UMAP_mouse.pdf",height=6,width=15)
+ggsave("UMAP_mouse_VISp.pdf",height=6,width=15)
 ```  
   
-Finally, plot SMI-32 (NEFH gene) expression in human and mouse.
+  
+#### Mouse ALM
+  
+First, select variable features based on beta score (this replaces the default Seurat method and is also independent of the Patch-seq cells).  
+  
+```{r mouse ALM variable gene selection}
+nGenes     <- 2000
+cl         <- setNames(annoALM$cluster_label,colnames(datALM))
+propExpr   <- get_cl_prop(datALM,cl)
+betaScore  <- getBetaScore(propExpr)
+betaOutA   <- data.frame(Gene=rownames(datALM),BetaScore=betaScore)
+betaOutA   <- betaOutM[order(-betaScore),]
+varFeatures<- betaOutA$Gene[1:nGenes]
+```
+  
+  
+Second build the mouse ALM Seurat object and run the preparations.  
+  
+```{r mouse ALM seurat}
+spl2 <- function(a) as.character(lapply(a,function(x) {a=strsplit(x," ")[[1]]; paste(a[c(1,length(a))],collapse = " ")}))
+mouse_metadata <- data.frame(celltype = spl2(annoALM$cluster_label),
+                             clusterFrem = annoALM$cluster_label)
+rownames(mouse_metadata) <- colnames(datALM)
+mouseA <- CreateSeuratObject(datALM, meta.data = mouse_metadata)
+mouseA <- NormalizeData(mouseA, verbose = FALSE)
+#mouseA <- FindVariableFeatures(mouseA, selection.method = "vst", nfeatures = 2000, verbose = FALSE) # 750
+VariableFeatures(mouseA) <- varFeatures
+mouseA <- ScaleData(object = mouseA, verbose = FALSE)
+mouseA <- RunPCA(object = mouseA, npcs = 30, verbose = FALSE)
+mouseA <- RunUMAP(object = mouseA, reduction = "pca", dims = 1:30, verbose = FALSE)
+``` 
 
-```{r plot NEFH, fig.height=5,fig.width=15}
-p1 <- FeaturePlot(object = human, reduction = "umap", pt.size = 1.2, features = "NEFH", ncol=4, slot="counts") + xlim(xl) + ylim(yl)
-p2 <- FeaturePlot(object = mouse, reduction = "umap", pt.size = 1.2, features = "NEFH", ncol=4, slot="counts") + xlim(xl) + ylim(yl)
-plot_grid(p1, p2, ncol = 2)
-ggsave("UMAP_NEFH.pdf",height=6,width=12)
+
+```{r plot mouse ALM seurat, fig.height=5,fig.width=15}
+colsM <- unique(annoALM$cluster_color)[match(sort(unique(mouse_metadata$celltype)),unique(mouse_metadata$celltype))]
+p1 <- DimPlot(object = mouseA, group.by = "celltype", reduction = "umap", pt.size = 1, 
+              label=TRUE, cols=colsM) + NoLegend() + xlim(xl) + ylim(yl)
+p2 <- DimPlot(object = mouseA, group.by = "celltype", reduction = "umap", pt.size = 1, 
+              label=FALSE, cols=colsM) + NoLegend() + xlim(xl) + ylim(yl)
+p_mouseA <- p2 # For saving coordinates later
+plot_grid(p1, p2, ncol = 3)
+ggsave("UMAP_mouse_ALM.pdf",height=6,width=15)
 ```  
   
   
 Save UMAP coordinates for human and mouse.  These will be used for mapping Patch-seq data in later scripts.  
   
 ```{r save umap}
-umap_human <- p1$data[,c("UMAP_1","UMAP_2")]
-umap_mouse <- p2$data[,c("UMAP_1","UMAP_2")]
-save(umap_human,umap_mouse,file="umap_coordinates.RData")
+umap_human  <- p_human$data[,c("UMAP_1","UMAP_2")]
+umap_mouseV <- p_mouseV$data[,c("UMAP_1","UMAP_2")]
+umap_mouseA <- p_mouseA$data[,c("UMAP_1","UMAP_2")]
+save(umap_human,umap_mouseV,umap_mouseA,file="umap_coordinates.RData")
 ```
   
   
-### Assess cluster heterogeneity in mouse and human  
+### Assess cluster heterogeneity in mouse VISp/ALM and human MTG  
   
 To assess cluster heterogeneity, we will compare the variance explained from the first PC in real data against the variance epxlained from the first PC in random shufflings of the data.  Clusters with high heterogeneity should also have at least one signficant PC relative to the expected PC value from chance.  We will downsample to the same number of cells per cluster and use the same number of variable genes calculated the same way in mouse and human for a fair comparison.  We are also excluding outlier samples from the PC calculation to insure that the results are not driven by a small number of outlier or low quality cells, and are excluding sex and mitochondrial genes.  
   
@@ -290,7 +390,7 @@ Next, find the actual and permuted PCs in human.
   
 ```{r human scramble PCs}
 set.seed(1)
-nCells  <- 80
+nCells  <- 70     # Decreasing from 80 to 70 to match the minimum size of ALM clusters (L2/3 IT ALM Ptrf)
 nGenes  <- nCells
 rCount  <- 10 # 2
 pCount  <- 100
@@ -326,9 +426,9 @@ for(cls in clustsH){
 ```
   
   
-Repeat, finding the actual and permuted PCs in mouse.  
+Repeat, finding the actual and permuted PCs in mouse VISp.  
   
-```{r mouse scramble PCs}
+```{r mouse VISp scramble PCs}
 clustsM <- sort(unique(annoVISp$cluster_label))[c(1,3,2)] # Order superficial to deep
 for(cls in clustsM){
   print(cls)
@@ -357,10 +457,42 @@ for(cls in clustsM){
 }
 ```  
   
+Repeat, finding the actual and permuted PCs in mouse ALM.  
   
-Now plot the results, comparing variation across all eight types.  
+```{r mouse ALM scramble PCs}
+clustsA <- sort(unique(annoALM$cluster_label))[c(1,3,2)] # No specific order
+for(cls in clustsA){
+  print(cls)
+  for (i in 1:rCount){
+    if(i==1) {
+      p1h[[cls]]  <- NULL
+      p1hr[[cls]] <- NULL
+    }
+    set.seed(i)
+    kpCell <- sample(colnames(datALM)[annoALM$cluster_label==cls],nCells)
+    nbt    <- CreateSeuratObject(datALM[kpGenes,kpCell])
+    nbt    <- FindVariableFeatures(nbt, selection.method = "vst", nfeatures = nGenes, mean.cutoff = c(1,Inf), verbose = FALSE)
+    datTmp <- as.matrix(FetchData(nbt,vars = VariableFeatures(nbt), slot="counts"))
+    pcaUse <- prcompAfterOutlierRemoval(datTmp,zThresh=zThresh)
+    varExp <- ((10000*(pcaUse$sdev)^2 / sum(pcaUse$sdev^2))/100)[1:pcMax]
+    p1h[[cls]] <- rbind(p1h[[cls]],varExp)
+    for (j in 1:pCount){
+      set.seed(i*pCount+j)
+      datRand <- t(apply(datTmp,1,function(x) return(x[sample(1:length(x),length(x))])))
+      colnames(datRand) <- colnames(datTmp)
+	    pcaRand <- prcompAfterOutlierRemoval(datRand,zThresh=zThresh)
+	    varExpR <- ((10000*(pcaRand$sdev)^2 / sum(pcaRand$sdev^2))/100)[1:pcMax]
+	    p1hr[[cls]] <- rbind(p1hr[[cls]],varExp/varExpR)
+    }
+  }
+}
+```  
   
-```{r plot heterogeneity results, fig.height=7,fig.width=7}
+  
+  
+Now plot the results, comparing variation across all 11 types.  
+  
+```{r plot heterogeneity results, fig.height=7,fig.width=9}
 meanDiff <- sdDiff <- NULL
 for (cls in names(p1hr)){
   meanDiff <- rbind(meanDiff,colMeans(p1hr[[cls]]))
@@ -371,12 +503,13 @@ colnames(meanDiff) <- colnames(sdDiff) <- paste0("PC",1:pcMax)
 
 # Data
 data <- data.frame(
-  name=factor(c(spl(clustsH),spl2(clustsM)),levels=c(spl(clustsH),spl2(clustsM))),
+  name=factor(c(spl(clustsH),spl2(clustsM),spl2(clustsA)),levels=c(spl(clustsH),spl2(clustsM),spl2(clustsA))),
   value=meanDiff[,1],
   sd=sdDiff[,1]
 )
 
-a = setNames(c(annoVISp$cluster_color,annoMTG$cluster_color),c(annoVISp$cluster_label,annoMTG$cluster_label))
+a = setNames(c(annoVISp$cluster_color,annoALM$cluster_color,annoMTG$cluster_color),
+             c(annoVISp$cluster_label,annoALM$cluster_label,annoMTG$cluster_label))
 data$cols <- as.character(a[rownames(data)])
 
 # line + dot
@@ -385,7 +518,7 @@ ggplot(data) +
   geom_errorbar( aes(x=name, ymin=value-sd, ymax=value+sd), width=0.4, colour="black", alpha=0.9, size=1.3) +
   ylab("Actual/permuted variance explained by PC1") + xlab("") + theme_bw() +
   theme(axis.text.x = element_text(angle = 90), text = element_text(size=16))
-ggsave("heterogeneity.pdf",height=8,width=4)
+ggsave("heterogeneity.pdf",height=8,width=6)
 ```
   
   
@@ -396,7 +529,7 @@ Using `scrattch.hi`, calculating the number of DEX genes between each pair of cl
 ```{r dex genes using hicat}
 de.param   <- de_param(low.th = 1, padj.th = 0.01, lfc.th = 1,    # Recommended parameters for SMART-seq data
                        q1.th = 0.5, q.diff.th = 0.7, de.score.th = 150)
-humanCount <- mouseCount <- 0
+humanCount <- mouseCountV <- mouseCountA <- 0
 numIters   <- 10
 
 for (n in 1:numIters){
@@ -413,7 +546,7 @@ for (n in 1:numIters){
   }
   humanCount = human_count + humanCount
   
-  ## Mouse
+  ## Mouse VISp
   cl <- setNames(make.names(annoVISp$cluster_label),annoVISp$sample_id)
   nm <- sort(unique(cl))
   kpSamp <- subsampleCells(cl,subSamp=nCells,seed=n)
@@ -424,19 +557,34 @@ for (n in 1:numIters){
     mouse_count[i,j] = mouse_de$de.genes[[paste(nm[i],nm[j],sep="_")]]$up.num
     mouse_count[j,i] = mouse_de$de.genes[[paste(nm[i],nm[j],sep="_")]]$down.num
   }
-  mouseCount = mouse_count + mouseCount
+  mouseCountV = mouse_count + mouseCountV
+  
+  ## Mouse ALM
+  cl <- setNames(make.names(annoALM$cluster_label),annoALM$sample_id)
+  nm <- sort(unique(cl))
+  kpSamp <- subsampleCells(cl,subSamp=nCells,seed=n)
+  mouse_de <- de_score(datALM[kpGenes, kpSamp], cl[kpSamp], de.param)
+  mouse_count <- matrix(0, ncol = length(nm), nrow = length(nm))
+  rownames(mouse_count) <- colnames(mouse_count) <- nm
+  for (i in 1:(length(nm)-1)) for (j in (i+1):length(nm)){
+    mouse_count[i,j] = mouse_de$de.genes[[paste(nm[i],nm[j],sep="_")]]$up.num
+    mouse_count[j,i] = mouse_de$de.genes[[paste(nm[i],nm[j],sep="_")]]$down.num
+  }
+  mouseCountA = mouse_count + mouseCountA
 }
-mouseCount = (mouseCount+t(mouseCount))/numIters
-humanCount = (humanCount+t(humanCount))/numIters
-print(paste("Human:",sum(humanCount[1:3,1:3])/6))
-print(paste("Mouse:",sum(mouseCount[1:3,1:3])/6))
+mouseCountV = (mouseCountV+t(mouseCountV))/numIters
+mouseCountA = (mouseCountA+t(mouseCountA))/numIters
+humanCount  = (humanCount+t(humanCount))/numIters
+print(paste("Human     :",sum(humanCount[1:3,1:3])/6))
+print(paste("Mouse VISp:",sum(mouseCountV[1:3,1:3])/6))
+print(paste("Mouse ALM :",sum(mouseCountA[1:3,1:3])/6))
 ```
   
   
 Comparable DEX genes in matched L2/3 types in mouse and human (maybe fewer in human) after matching for number of cells.  Plot these results.  
   
 ```{r plot dex genes}
-out <- t(cbind(humanCount[1:3,],mouseCount))
+out <- t(cbind(humanCount[1:3,],mouseCountV,mouseCountA))
 colnames(out) <- 1:3
 out[out==0]=NA
 out <- as.data.frame(out)
@@ -449,6 +597,22 @@ barplot(apply(out[,1:3],1,mean,na.rm=TRUE),las=2,col=data$cols, ylab="# DEX gene
 dev.off()
 ```
   
+  
+## Expression of mFISH markers in FACS
+  
+Finally, let's plot the expected cell type specificity of marker genes that are used in mFISH experiments to assess laminar localization of cell types in situ.  Note that an older interacitve version of the scripts were used to make the version of the plot in Extended Data Figure 3d, but that the overall pattern (and thus conclusions based on this plot) are entirely unchanged.   
+  
+```{r plot heatmap, fig.height=6,fig.width=4}
+mark    <- c("LAMP5","LTK","CUX2","GLP2R","RORB","FREM3","CARTPT","COL22A1")
+data.df <- cbind(sample_name = colnames(datMTG), as.data.frame(2^t(datMTG[mark,])-1))
+anno    <- data.frame(sample_name=as.character(annoMTG$sample_id),
+                      cluster_label=as.character(annoMTG$cluster_label),
+                      cluster_color=as.character(annoMTG$cluster_color))
+anno$cluster_id <- as.numeric(factor(anno$cluster_label,levels=clustsH))
+scrattch.vis::group_heatmap_plot(data.df, anno, genes=mark, grouping ="cluster", stat="median",
+                                 log_scale = TRUE, max_width = 30, label_height = 35)
+```
+
   
 Output session information.  
   

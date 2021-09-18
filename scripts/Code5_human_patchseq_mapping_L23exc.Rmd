@@ -207,16 +207,16 @@ Plot the results in UMAP space.
 xl <- range(umap_human[,1])
 yl <- range(umap_human[,2])
 colsH <- unique(annoMTG$cluster_color)[match(sort(unique(annoMTG$cluster_label)),unique(annoMTG$cluster_label))]
-p1 <- DimPlot(object = brain.integrated, group.by = "set", reduction = "umap", do.return = TRUE, 
+p1 <- DimPlot(object = brain.integrated, group.by = "set", reduction = "umap", 
               pt.size = 1) + ggtitle("Platform (green=patchseq)") +xlim(xl) + ylim(yl) + NoLegend()
 p2 <- DimPlot(object = brain.integrated, group.by = "celltype",  reduction = "umap", 
-      do.return = TRUE, pt.size = 1, label=TRUE, label.size = 2,cells=colnames(datMTG), cols=colsH) + NoLegend() + 
+      pt.size = 1, label=TRUE, label.size = 2,cells=colnames(datMTG), cols=colsH) + NoLegend() + 
       ggtitle("FACS cells") + xlim(xl) + ylim(yl)
 p3 <- DimPlot(object = brain.integrated, group.by = "celltypeNew",  reduction = "umap", 
-      do.return = TRUE, pt.size = 2, label=FALSE, label.size = 2,cells=colnames(datPatch), cols=colsH) + NoLegend() + 
+      pt.size = 2, label=FALSE, label.size = 2,cells=colnames(datPatch), cols=colsH) + NoLegend() + 
       ggtitle("Seurat-called types") + xlim(xl) + ylim(yl)
 p4 <- DimPlot(object = brain.integrated, group.by = "celltype",  reduction = "umap", 
-      do.return = TRUE, pt.size = 2, label=TRUE, label.size = 2,cells=colnames(datPatch)) + NoLegend() + 
+      pt.size = 2, label=TRUE, label.size = 2,cells=colnames(datPatch)) + NoLegend() + 
       ggtitle("Original Seurat types based on all data") + xlim(xl) + ylim(yl)
 plot_grid(p1, p2, p3, p4, ncol=2)
 ggsave("UMAP_L23human.pdf",height=11,width=11)
@@ -295,7 +295,7 @@ write.csv(metaPatch,"IVSCC_excitatory_L23_March2020.csv",row.names=FALSE)
 ```  
   
   
-Now plot the results and significance values.  
+Now plot the results and significance values.  Note that the cortical depth plots included in the manuscript were generated using the identical data to what is shown below, but using different plotting functions, axis ranges and cell type ordering.  These plots are intended to get a feel for what is significantly different across cell types, including cortical depth.  
   
 ```{r plot correpondence with everything, warning=FALSE, fig.width=7,fig.height=7}  
 kpSampP2 <- 1:dim(metaPatch)[1]  # USE ALL SAMPLES
@@ -536,7 +536,7 @@ anno$cluster_id    <- as.numeric(as.factor(anno$cluster_label))
 ```
   
   
-```{r plot top genes in MTG, fig.width=4,fig.height=9}
+```{r plot top genes in MTG, fig.width=4,fig.height=9, warning=FALSE}
 group_violin_plot(data.df, anno, grouping ="cluster", genes=mark[length(mark):1], log_scale = TRUE, 
                        max_width = 20, label_height = 15)
 ggsave("violinPlots_markerGenes.pdf", width = 4, height = 9)
@@ -546,7 +546,7 @@ These results look reasonable but not visually impressive, so we are going to om
   
 Use genesortR to identify genes differentially expressed between FREM3, COL22A1, and CARM1P1 for DEX analysis.  These gene lists are compared against gene lists calculated the same way from the FACS data to determine consisency between methods.  This comparison was done from these gene lists output and not in R.  
   
-```{r}
+```{r, warning=FALSE}
 clp = setNames(metaPatch$SeuratMapping,colnames(datPatch))
 
 #filter cells

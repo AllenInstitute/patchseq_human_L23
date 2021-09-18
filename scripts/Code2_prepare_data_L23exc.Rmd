@@ -1,7 +1,7 @@
 ---
 title: "Data prep for comparisons"
 author: "Jeremy Miller"
-date: "March 27, 2020"
+date: "September 15, 2021"
 output: html_notebook
 ---
 
@@ -10,7 +10,7 @@ This notebook prepares the data for comparing mouse VISp and human MTG using FAC
 Prior to running this script, you will need to do the following:  
 
 1. Run the "Code1_prepareComparisonDataSets.Rmd" script.  
-2. If needed, set the working directory, (e.g., `setwd("C:/Users/jeremym/Desktop/patchseq_human_L23")`).  
+2. If needed, set the working directory, (e.g., `setwd("PATH_TO_DIRECTORY/patchseq_human_L23")`).  
 3. Download everything in the from patchseq_human_L23/data GitHub folder to your `data/` directory.  
 4. Make sure all of the relevant libraries below are installed in advance.  
   
@@ -21,14 +21,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
   
   
-First load the required libraries and options and set directory locations.  Note that this is all the libraries required for all the code documents, not just this one.  
+First load the required libraries and options and set directory locations.  Note that this includes some libraries required for subsequent code documents as well as this one.  
   
 ```{r load_libraries}
-# Detach all packages (if any)
-#nm = names(sessionInfo()$otherPkgs)
-#if(!is.null(nm))
-#  invisible(lapply(paste0('package:', nm), detach, character.only=TRUE, unload=TRUE))
-
 ## Load libraries
 suppressPackageStartupMessages({
   library(feather)
@@ -55,6 +50,7 @@ options(future.globals.maxSize = 1000 * 1024^2)
 ## Folder locations
 mtgFolder   <- "MTG/"
 vispFolder  <- "VISp/"
+almFolder   <- "ALM/"
 inputFolder <- "data/"
 ```
   
@@ -82,7 +78,6 @@ Second, read in the data from mouse VISp and subset to only include L2/3 excitat
   
 ```{r read in VISp data}
 ## Read in the data
-vispFolder<- "VISp/"  
 annoVISp  <- read_feather(paste(vispFolder,"anno.feather",sep="")) 
 exprVISp  <- feather(paste(vispFolder,"data.feather",sep=""))
 annoVISp  <- annoVISp[match(exprVISp$sample_id,annoVISp$sample_id),] 
@@ -102,6 +97,29 @@ datVISp   <- datVISp[,kpVISp]
 ```
   
   
+Third, read in the data from mouse ALM and subset to only include L2/3 excitatory neurons.  
+  
+```{r read in ALM data}
+## Read in the data
+annoALM  <- read_feather(paste(almFolder,"anno.feather",sep="")) 
+exprALM  <- feather(paste(almFolder,"data.feather",sep=""))
+annoALM  <- annoALM[match(exprALM$sample_id,annoALM$sample_id),] 
+datALM   <- as.matrix(exprALM[,names(exprALM)!="sample_id"])
+rownames(datALM) <- annoALM$sample_id
+datALM   <- t(datALM)
+datALM   <- log2(datALM+1)  
+
+datALM_all  <- datALM
+annoALM_all <- annoALM
+
+## Select cells from the ALM-specific excitatory L2/3 IT subclass 
+kpALM    <- (annoALM$subclass_label=="L2/3 IT")&grepl("IT",annoALM$cluster_label)&
+             (!grepl("VISp",annoALM$cluster_label)) # Remove any cells from ALM-predominant clusters
+annoALM  <- annoALM[kpALM,]
+datALM   <- datALM[,kpALM]
+```
+  
+  
 We now want to read in the mouse to human orthology table and convert the mouse names to human names for common genes.  This will be useful later.  
   
 ```{r convert mouse to human genes}
@@ -111,6 +129,7 @@ orthMouse  <- orth$human_symbol[match(rownames(datVISp),orth$mouse_symbol)]
 genesMouse <- rownames(datVISp)
 genesMouse[!is.na(orthMouse)] <- orthMouse[!is.na(orthMouse)]
 rownames(datVISp) <- genesMouse
+rownames(datALM) <- genesMouse
 
 ## Select the genes of common mouse/human genes that are not sex or mitochondrial genes for later
 data(mito_genes)  
@@ -170,13 +189,11 @@ layer_facs <- table(annoMTG_all$layer_label[kpSamp1])/sum(kpSamp1)
 round(100*layer_facs)/100
 
 subsample_scale = layer_scale/layer_facs/max(layer_scale/layer_facs)
-
 layer = annoMTG_all$layer_label[kpSamp1]
 index = (1:length(kpSamp1))[kpSamp1]
 useIndex <- NULL
 for (lay in kpLayer){
   subs     <- round(length(index[layer==lay])*subsample_scale[lay])
-  set.seed(1) # For reproducibility
   useIndex <- c(useIndex,sample(index[layer==lay],subs))
 }
 
@@ -184,8 +201,17 @@ kpSamp <- is.element(1:length(kpSamp1),useIndex)
 layer_facs <- table(annoMTG_all$layer_label[kpSamp])/sum(kpSamp)
 round(100*layer_facs)/100
 table(kpSamp)
-table(annoMTG_all$cluster_label[kpSamp])
+```
+  
+  
+In our initial submission we didn't record the seed, so for reproducibility across manuscript version, we include the sample names selected in the sampling step from the original run in the data folder
+  
+```{r match original submission}
+sampled_nuclei <- scan("data/facs_samples.txt",what="numeric")
+kpSamp <- is.element(annoMTG_all$sample_id,sampled_nuclei)
+table(kpSamp)
 
+table(annoMTG_all$cluster_label[kpSamp])
 datMTG  <- datMTG_all[,kpSamp]
 annoMTG <- annoMTG_all[kpSamp,]
 
@@ -193,9 +219,10 @@ annoMTG <- annoMTG_all[kpSamp,]
 annoMTG$scaled_depth <- setNames(c(0,0.15,0.6,1),kpLayer)[annoMTG$layer_label]
 ```
   
+  
 Next, annotate the FREM3 cluster by layer, as well as by the subtypes calculated in Hodge et al 2019 supplemental materials (included with this analysis as a separate file).  
   
-```{r split FREM3 again}
+```{r annotate FREM3 clusters}
 load("data/subtype_mtg_clusters.rda")
 clNew  <- cl.final[annoMTG_all$seq_name_label]
 isFREM <- table(clNew,grepl("FREM",annoMTG_all$cluster_label))
@@ -206,7 +233,10 @@ clNew[kpF] <- paste0("f",clNew[kpF])
 clNew[!kpF] <- "other"
 names(clNew) <- colnames(datMTG_all)
 annoMTG$frem_subtype <- clNew[colnames(datMTG)]
-
+```
+  
+  
+```{r divide FREM3 by layer}
 ## Split FREM3 by layer
 cluster_frem        <- as.character(annoMTG$cluster_label)
 kp                  <- cluster_frem=="Exc L2-3 LINC00507 FREM3"
@@ -214,8 +244,8 @@ cluster_frem[kp]    <- paste(cluster_frem[kp],annoMTG$brain_subregion_label[kp],
 annoMTG$frem_layer  <- cluster_frem
 ```
   
-Note that we have already subsetted the relevant mouse VISp cells from "L2/3 IT VISp Adamts2", "L2/3 IT VISp Agmat", and "L2/3 IT VISp Rrad" clusters above.  We are not going to attempt to subsample these cell types further in mouse.  
   
+Note that we have already subsetted the relevant mouse VISp cells from "L2/3 IT VISp Adamts2", "L2/3 IT VISp Agmat", and "L2/3 IT VISp Rrad" clusters above.  We are not going to attempt to subsample these cell types further in mouse.  
   
 ### Subset and update relevant meta-data
   
@@ -233,13 +263,21 @@ annoMTG$cluster_color <- as.character(newColors[annoMTG$cluster_label])
   
 Next, update the mouse FACs annotations.  
   
-```{r mouse FACs annotations}
+```{r mouse-based FACs annotations}
 kpColumnsM  <- c("sample_id","age_days_label","brain_hemisphere_label","cluster_label","cluster_color",
                  "donor_label","genotype_label","sex_label")
+
+# For VISp
 newColorsM  <- setNames(c("#ffc800","#d10034","#f67415"),c("L2/3 IT VISp Adamts2","L2/3 IT VISp Agmat","L2/3 IT VISp Rrad"))
 annoVISp    <- annoVISp[,intersect(colnames(annoVISp),kpColumnsM)]
 annoVISp_all<- annoVISp_all[,intersect(colnames(annoVISp_all),kpColumnsM)]
 annoVISp$cluster_color <- as.character(newColorsM[annoVISp$cluster_label])
+
+# For ALM
+newColorsA <- setNames(c("#ffc800","#d10034","#f67415"),c("L2/3 IT ALM Macc1 Lrg1","L2/3 IT ALM Ptrf","L2/3 IT ALM Sla"))
+annoALM    <- annoALM[,intersect(colnames(annoALM),kpColumnsM)]
+annoALM_all<- annoALM_all[,intersect(colnames(annoALM_all),kpColumnsM)]
+annoALM$cluster_color <- as.character(newColorsA[annoALM$cluster_label])
 ```
   
 The data sets are now ready to compare!  We will now save these relevant files as an R object that will be the starting point for all further transcriptomic analysis in the paper.  
@@ -250,11 +288,12 @@ The data sets are now ready to compare!  We will now save these relevant files a
 First save the results in RData format for the R scripts.  
   
 ```{r save data for R}
-save(datMTG_all, annoMTG_all, datVISp_all, annoVISp_all, file="complete_facs_data_sets.RData")
-save(datMTG, annoMTG, datVISp, annoVISp, datPatch, annoPatch, datPatchM, annoPatchM, file="input_data_sets.RData")
+save(datMTG_all, annoMTG_all, datVISp_all, annoVISp_all, datALM_all, annoALM_all,file="complete_facs_data_sets.RData")
+save(datMTG, annoMTG, datVISp, annoVISp, datALM, annoALM, datPatch, annoPatch, datPatchM, annoPatchM, file="input_data_sets.RData")
 ```
   
-Second, save the results in feather format for the python scripts.  
+  
+Second, save the Patch-seq results in feather format for the python scripts.  
   
 ```{r save data for python}
 dat <- data.frame(sample_id=colnames(datPatch),t(datPatch))
@@ -268,4 +307,11 @@ write_feather(annoPatchM,"annoM.feather")
 ```
   
 Note that these output files do not include human cluster calls for Patch-seq cells, which will be calculated in a later R script.  
+  
+  
+Output session information.  
+  
+```{r sessionInfo}
+sessionInfo()
+```
   

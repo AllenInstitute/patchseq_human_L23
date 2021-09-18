@@ -163,7 +163,7 @@ data_FACS  <- FetchData(brain.integrated, vars=paste0("PC_",1:dims), cells=colna
 # Run umap from umap library
 umap_FACs  <- umap(data_FACS) # Predict does not work with method="umap-learn" as far as I can tell
 # Replace values with values from Seurat umap in initial analysis
-umap_FACs$layout <- as.matrix(umap_mouse)
+umap_FACs$layout <- as.matrix(umap_mouseV)
 # Predict patch-seq locations using "predict" function
 umap_patch <- predict(umap_FACs,data_patch)
 ```
@@ -185,16 +185,16 @@ Plot the results in UMAP space.
 xl <- range(umap_human[,1])
 yl <- range(umap_human[,2])
 colsM <- unique(annoVISp$cluster_color)[match(sort(unique(annoVISp$cluster_label)),unique(annoVISp$cluster_label))]
-p1 <- DimPlot(object = brain.integrated, group.by = "set", reduction = "umap", do.return = TRUE, 
+p1 <- DimPlot(object = brain.integrated, group.by = "set", reduction = "umap", 
               pt.size = 1) + ggtitle("Platform (green=patchseq)") +xlim(xl) + ylim(yl) + NoLegend()
 p2 <- DimPlot(object = brain.integrated, group.by = "celltype",  reduction = "umap", 
-      do.return = TRUE, pt.size = 1, label=TRUE, label.size = 2,cells=colnames(datVISp), cols=colsM) + NoLegend() + 
+      pt.size = 1, label=TRUE, label.size = 2,cells=colnames(datVISp), cols=colsM) + NoLegend() + 
       ggtitle("FACS cells") + xlim(xl) + ylim(yl)
 p3 <- DimPlot(object = brain.integrated, group.by = "celltype",  reduction = "umap", 
-      do.return = TRUE, pt.size = 2, label=FALSE, label.size = 2,cells=colnames(datPatchM), cols=colsM) + NoLegend() + 
+      pt.size = 2, label=FALSE, label.size = 2,cells=colnames(datPatchM), cols=colsM) + NoLegend() + 
       ggtitle("Patch-seq types") + xlim(xl) + ylim(yl)
 p3 <- DimPlot(object = brain.integrated, group.by = "celltype",  reduction = "umap", 
-      do.return = TRUE, pt.size = 2, label=TRUE, label.size = 2,cells=colnames(datPatchM), cols=colsM) + NoLegend() + 
+      pt.size = 2, label=TRUE, label.size = 2,cells=colnames(datPatchM), cols=colsM) + NoLegend() + 
       ggtitle("Patch-seq types") + xlim(xl) + ylim(yl)
 plot_grid(p1, p2, p3, ncol=2)
 ggsave("UMAP_L23mouse.pdf",height=11,width=11)
@@ -251,7 +251,7 @@ write.csv(metaPatch,"IVSCC_excitatory_L23mouse_March2020.csv",row.names=FALSE)
 ```  
   
   
-Now plot the results and significance values.  
+Now plot the results and significance values.  Note that the cortical depth plots included in the manuscript were generated using the identical data to what is shown below, but using different plotting functions, axis ranges and cell type ordering.  These plots are intended to get a feel for what is significantly different across cell types, including cortical depth.  
   
 ```{r plot correpondence with everything, warning=FALSE, fig.width=7,fig.height=7}  
 kpSampP2 <- 1:dim(metaPatch)[1]  # USE ALL SAMPLES

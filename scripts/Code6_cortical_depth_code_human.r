@@ -1,6 +1,6 @@
 #############################################################################
 ## Setup and library loading
-setwd("Z:\\hct\\HCT_RNAseq\\Jeremy\\patchseq_analysis\\human_IVSCC_paper_Jan2020\\human_cell_sizes\\")
+setwd("Z:\\hct\\HCT_RNAseq\\Jeremy\\patchseq_analysis\\human_IVSCC_paper_July2020\\human_cell_sizes\\")
 library(RImageJROI)
 library(msir)
 library(ggplot2)
@@ -183,3 +183,4 @@ densH <- dens
 l2H   <- l2
 roiInfoH <- roiInfo
 save(densH, l2H, cellsPerMMh, breaks, roiInfoH, file="../mouse_cell_sizes/human_cell_data.RData")
+save(densH, l2H, cellsPerMMh, breaks, roiInfoH, file="../mouse_cell_sizes_TEa/human_cell_data.RData")
