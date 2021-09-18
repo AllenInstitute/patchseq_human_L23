@@ -1,7 +1,7 @@
 ---
 title: "Seurat mapping of human L2/3 excitatory Patch-seq cells"
 author: "Jeremy Miller"
-date: "March 27, 2020"
+date: "September 15, 2021"
 output: html_notebook
 ---
 
@@ -12,7 +12,7 @@ This notebook compares human FACs and Patch-seq data.  Prior to data visualizati
 knitr::opts_chunk$set(echo = TRUE)
 ```
   
-If needed set the working directory:  (e.g., `setwd("C:/Users/jeremym/Desktop/patchseq_human_L23")`).  
+If needed set the working directory:  (e.g., `setwd("PATH_TO_DIRECTORY/patchseq_human_L23")`).  
   
 ## Prepare the data  
   
