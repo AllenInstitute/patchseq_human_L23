@@ -1,0 +1,118 @@
+,Donor,Gender,Age (yr),Ethnicity,Medical Condition,Hemisphere,Lobe,Patch-seq,IHC scoring
+,H15.03.006,F,24,Caucasian,Epilepsy,L,Temporal,,X
+,H15.06.016,F,27,Caucasian,Tumor,R,Frontal,,X
+,H15.06.017,M,65,Asian,Epilepsy,R,Temporal,,X
+,H15.06.018,F,19,Caucasian,Epilepsy,R,Temporal,,X
+,H16.03.001,M,39,Caucasian,Epilepsy,L,Temporal,,X
+,H16.03.002,F,41,not specified,Epilepsy,L,Temporal,,X
+,H16.03.003,M,25,not specified,Epilepsy,R,Frontal,,X
+,H16.03.005,M,27,not specified,Epilepsy,R,Temporal,,X
+,H16.03.006,F,33,not specified,Epilepsy,R,Temporal,,X
+,H16.03.007,F,28,Caucasian,Epilepsy,L,Temporal,X,X
+,H16.03.008,M,31,not specified,Epilepsy,R,Temporal,,X
+,H16.03.009,M,37,not specified,Epilepsy,L,Parietal,,X
+,H16.03.010,M,48,Caucasian,Epilepsy,R,Temporal,,X
+,H16.03.011,M,42,not specified,Epilepsy,R,Temporal,,X
+,H16.06.002,F,35,Caucasian,Epilepsy,R,Temporal,,X
+,H16.06.003,F,31,Caucasian,Epilepsy,L,Temporal,,X
+,H16.06.004,M,37,Caucasian,Epilepsy,R,Temporal,,X
+,H16.06.006,M,42,Caucasian,Tumor,R,Frontal,,X
+,H16.06.007,M,26,Caucasian,Tumor,L,Frontal,,X
+,H16.06.008,F,24,Hispanic/Latino,Epilepsy,L,Temporal,,X
+,H16.06.009,F,48,Caucasian,Epilepsy,L,Temporal,,X
+,H16.06.010,M,67,Caucasian,Epilepsy,L,Temporal,,X
+,H16.06.011,F,24,Caucasian,Epilepsy,R,Temporal,X,X
+,H16.06.012,M,83,not specified,Tumor,R,Frontal,,X
+,H16.06.013,F,34,African American,Epilepsy,L,Temporal,,X
+,H17.03.002,M,61,not specified,Epilepsy,R,Temporal,X,X
+,H17.03.005,M,60,not specified,Epilepsy,R,Temporal,X,X
+,H17.03.006,F,67,not specified,Epilepsy,L,Temporal,X,X
+,H17.03.007,F,27,not specified,Epilepsy,R,Temporal,X,X
+,H17.03.008,F,60,Caucasian,Epilepsy,R,Temporal,X,X
+,H17.03.009,M,18,Caucasian,Epilepsy,R,Temporal,X,X
+,H17.03.010,F,38,not specified,Epilepsy,L,Temporal,X,X
+,H17.03.011,M,30,not specified,Epilepsy,R,Temporal,,X
+,H17.03.013,F,41,not specified,Epilepsy,L,Temporal,,X
+,H17.03.014,M,20,not specified,Epilepsy,L,Temporal,X,X
+,H17.03.015,M,72,not specified,Tumor,R,Temporal,,X
+,H17.03.016,M,36,not specified,Epilepsy,R,Temporal,X,X
+,H17.06.003,F,23,not specified,Epilepsy,L,Temporal,X,X
+,H17.06.004,F,71,not specified,Tumor,L,Parieto-occipital,,X
+,H17.06.005,M,38,African-American,Epilepsy,L,Temporal,X,X
+,H17.06.006,M,35,not specified,Epilepsy,L,Temporal,X,X
+,H17.06.007,F,42,not specified,Tumor,R,Frontal,X,X
+,H17.06.009,M,52,Caucasian,Tumor,L,Temporal,X,X
+,H17.06.012,M,23,Alaskan Native,Epilepsy,R,Temporal,X,X
+,H17.06.013,M,29,Caucasian,Epilepsy,R,Frontal,,X
+,H17.06.015,M,19,Caucasian,Epilepsy,R,Temporal,X,X
+,H17.06.016,F,55,Caucasian,Tumor,R,Frontal,X,
+,H17.26.001,F,58,not specified,Tumor,R,Temporal,,X
+,H17.26.002,F,57,not specified,Tumor,L,Temporal,,X
+,H17.26.003,M,25,not specified,Tumor,R,Temporal,X,X
+,H17.26.004,M,34,Asian,Tumor,L,Temporal,,X
+,H17.26.005,F,27,not specified,Tumor,L,Frontal,X,X
+,H18.03.002,F,48,not specified,Epilepsy,L,Frontal,,X
+,H18.03.003,M,21,not specified,Both,L,Temporal,X,X
+,H18.03.004,M,28,not specified,Epilepsy,L,Temporal,X,X
+,H18.03.005,F,49,Caucasian,Epilepsy,R,Temporal,X,X
+,H18.03.006,F,24,not specified,Epilepsy,L,Parietal,X,X
+,H18.03.007,F,59,Caucasian,Epilepsy,R,Temporal,X,X
+,H18.03.008,F,19,not specified,Epilepsy,L,Temporal,X,X
+,H18.03.009,M,19,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.010,M,31,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.012,M,22,not specified,Both,L,Temporal,X,X
+,H18.03.313,F,23,Caucasian,Epilepsy,R,Temporal,X,X
+,H18.03.314,M,31,Caucasian,Epilepsy,R,Temporal,X,X
+,H18.03.315,M,40,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.316,F,45,not specified,Epilepsy,L,Temporal,X,X
+,H18.03.317,M,51,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.318,M,60,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.319,M,36,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.320,M,34,not specified,Epilepsy,L,Temporal,X,X
+,H18.03.322,M,38,not specified,Epilepsy,R,Temporal,X,X
+,H18.03.323,M,24,not specified,Both,R,Frontal,X,X
+,H18.06.001,M,69,Caucasian,Tumor,L,Frontal,X,X
+,H18.06.004,F,69,Caucasian,Tumor,R,Temporal,X,X
+,H18.06.005,F,57,Caucasian,Tumor,L,Temporal,X,X
+,H18.06.358,F,38,Caucasian,Tumor,R,Frontal,X,X
+,H18.06.359,M,47,Caucasian,Tumor,L,Frontal,X,X
+,H18.06.362,F,63,not specified,Tumor,R,Frontal,X,X
+,H18.06.363,M,22,Caucasian,Epilepsy,R,Temporal,X,X
+,H18.06.365,F,31,not specified,Tumor,L,Frontal,X,X
+,H18.06.366,M,38,not specified,Tumor,L,Temporal,X,X
+,H18.06.367,M,58,not specified,Tumor,R,Temporal,X,X
+,H18.06.368,M,59,Caucasian,Epilepsy,L,Temporal,X,X
+,H18.06.371,M,28,Caucasian,Epilepsy,L,Temporal,X,X
+,H18.25.001,M,85,not specified,Postmortem,R,Temporal,,X
+,H18.26.001,F,60,not specified,Tumor,L,Parietal,,X
+,H18.26.002,M,71,not specified,Tumor,R,Temporal,,X
+,H18.26.403,F,68,not specified,Tumor,R,Frontal,X,X
+,H18.26.404,M,68,not specified,Tumor,L,Temporal,X,X
+,H18.26.405,F,68,not specified,Tumor,R,Temporal,X,X
+,H18.28.001,F,50,Caucasian,Tumor,L,Temporal,X,
+,H18.28.009,M,41,Caucasian,Tumor,L,Frontal,X,
+,H18.28.010,M,33,Caucasian,Tumor,L,Frontal,X,
+,H18.28.012,M,72,Caucasian,Tumor,R,Temporal,X,
+,H18.28.013,M,45,Caucasian,Tumor,R,Frontal,X,
+,H18.28.015,M,51,Caucasian,Tumor,L,Frontal,X,
+,H18.28.017,F,72,Caucasian,Encephalomyelitis,R,Frontal,X,
+,H18.28.018,F,50,Caucasian,Hydrocephalus,R,Temporal,X,
+,H18.28.019,M,68,Caucasian,Hydrocephalus,R,Temporal,X,
+,H18.28.020,F,35,Caucasian,Tumor,R,Temporal,X,
+,H18.28.025,M,21,Caucasian,Tumor,R,Temporal,X,
+,H18.28.026,M,32,Caucasian,Tumor,R,Temporal,X,
+,H18.29.124,M,44,not specified,Epilepsy,R,Temporal,X,
+,H18.29.125,M,28,not specified,Epilepsy,L,Temporal,X,
+,H18.29.126,F,47,not specified,Epilepsy,L,Frontal,X,
+,H18.29.127,M,28,not specified,Epilepsy,L,Parietal,X,
+,H18.29.134,M,58,not specified,Epilepsy,R,Temporal,X,
+,H19.03.301,M,46,not specified,Epilepsy,L,Temporal,X,
+,H19.03.302,M,36,not specified,Epilepsy,R,Temporal,X,
+,H19.03.304,M,36,not specified,Epilepsy,R,Temporal,X,
+,H19.03.305,M,42,not specified,Epilepsy,L,Temporal,X,
+,H19.28.001,M,48,Caucasian,Tumor,R,Frontal,X,
+,H19.28.003,F,69,Caucasian,Hydrocephalus,R,Occipital,X,
+,H19.28.004,F,66,Caucasian,Tumor,R,Frontal,X,
+,H19.28.005,M,73,Caucasian,Tumor,L,Temporal,X,
+,H19.28.007,M,68,Caucasian,Hydrocephalus,R,Occipital,X,
+,H19.29.142,F,65,not specified,Tumor,L,Frontal,X,
