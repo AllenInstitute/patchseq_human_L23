@@ -27,6 +27,14 @@ def load_data():
                 .assign(species='mouse')
                 .pipe(fix_df)
             )
+    drop_neg = [
+        'input_resistance',
+        'fi_fit_slope',
+        'sag'
+    ]
+    for feat in drop_neg:
+        mouse_df[feat] = mouse_df[feat].apply(lambda x: x if (x>0) else np.nan)
+        human_df[feat] = human_df[feat].apply(lambda x: x if (x>0) else np.nan)
     return human_df, mouse_df, ephys_df, morph_df
 
 depth = "L23_cell_depth"
@@ -34,13 +42,16 @@ cluster = "SeuratMapping"
 types_ordered = [ 'LTK', 'GLP2R', 'FREM3', 'CARM1P1', 'COL22A1',
       'Adamts2', 'Rrad', 'Agmat', ]
 
+from pandas.api.types import CategoricalDtype
+ttype_categorical = CategoricalDtype(categories=types_ordered, ordered=True)
+
 def fix_df(df):
-    return (df.assign(cluster=lambda df: df[cluster]
+    df = df.assign(cluster=lambda df: df[cluster]
                         .apply(lambda name: name.split(' ')[-1])
-                        .astype('category', categories=types_ordered, ordered=True),
-                    depth=lambda df: df[depth])
-                # sample shuffles cell order for plotting
-                .sample(frac=1, random_state=42))
+                        .astype(ttype_categorical),
+                    depth=lambda df: df[depth]).sample(frac=1, random_state=42)
+    df.cluster.cat.remove_unused_categories(inplace=True)
+    return df
 
 def join_gene_data(df, genes):
     join_on = 'sample_id'
