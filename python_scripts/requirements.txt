@@ -1,6 +1,6 @@
 numpy==1.15
 pandas==0.24
-scipy==1.4
+scipy==1.10.0
 scikit-learn==0.22
 seaborn==0.9
 statsmodels==0.11
